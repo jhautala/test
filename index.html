@@ -83,27 +83,35 @@
                 }
 
                 let result = i * 2 - 3;
-                let visited = new Set();
-                let stack = [bNode];
-                do {
-                    let curr = stack.pop();
-                    let pre = visited.size;
-                    visited.add(curr);
-                    let post = visited.size;
-                    if (post > pre) {
-                        if (result > 0) {
-                            aNode.addbetter(curr);
-                            curr.better.forEach(n => {
-                                stack.push(n);
-                            });
-                        } else {
-                            aNode.addworse(curr);
-                            curr.worse.forEach(n => {
-                                stack.push(n);
-                            });
+                let upd = (n1, n2, r) => {
+                    let visited = new Set();
+                    let stack = [n2];
+                    do {
+                        let curr = stack.pop();
+                        let pre = visited.size;
+                        visited.add(curr);
+                        let post = visited.size;
+                        if (post > pre) {
+                            if (r > 0) {
+                                n1.addbetter(curr);
+                                curr.better.forEach(n => {
+                                    stack.push(n);
+                                });
+                            } else {
+                                n1.addworse(curr);
+                                curr.worse.forEach(n => {
+                                    stack.push(n);
+                                });
+                            }
                         }
-                    }
-                } while (stack.length > 0)
+                    } while (stack.length > 0)
+                };
+                console.log('*** updating for ' + aNode.title);
+                upd(aNode, bNode, result);
+                input.log();
+
+                console.log('*** updating for ' + bNode.title);
+                upd(bNode, aNode, -result);
                 input.log();
             }
 
