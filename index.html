@@ -1,219 +1,292 @@
 <html>
-    <div>
-        <button id="t1" onclick="better(1)"></button>
-        <button id="t2" onclick="better(2)"></button>
-        <button id="u1" onclick="better(-1)"></button>
-        <button id="u2" onclick="better(-2)"></button>
-        <button id="u" onclick="better(-0)"></button>
-    </div>
-    <div>
-        <p id="output" style="font-family: monospace; white-space: pre;">
-        </p>
-        <p id="temp" style="font-family: monospace; white-space: pre; color:darkgray; ">
-        </p>
-    </div>
-    <script>
-        let selects = 0;
-        let comparisons = 0;
-        let skips = 0;
-        let pair = null;
-        let seen = new Set();
+    <div>
+        <button id="t1" onclick="better(1)"></button>
+        <button id="t2" onclick="better(2)"></button>
+        <button id="u1" onclick="better(-1)"></button>
+        <button id="u2" onclick="better(-2)"></button>
+        <button id="u" onclick="better(-0)"></button>
+    </div>
+    <div>
+        <p id="output" style="font-family: monospace; white-space: pre;">
+        </p>
+        <p id="temp" style="font-family: monospace; white-space: pre; color:darkgray; ">
+        </p>
+    </div>
+    <script>
+        let selects = 0;
+        let comparisons = 0;
+        let skips = 0;
+        let pair = null;
+        let seen = new Set();
 
-        class SortNode {
-            lower = new Set();
-            higher = new Set();
-            same = new Set();
-            unknown = false;
-            known = false;
+        class SortNode {
+            title = '';
+            better = new Set();
+            worse = new Set();
+            same = new Set();
+            unknown = false;
+            known = false;
 
-            constructor() {
-            }
+            constructor(title) {
+                this.title = title;
+            }
 
-            addSame(n) {
-                this.known = true;
-                n.known = true;
-                this.same.add(n);
-                n.same.add(this);
-            }
+            addSame(n) {
+                this.known = true;
+                n.known = true;
+                this.same.add(n);
+                n.same.add(this);
+            }
 
-            addHigher(n) {
-                this.known = true;
-                n.known = true;
-                this.higher.add(n);
-                n.lower.add(this);
-            }
+            addworse(n) {
+                this.known = true;
+                n.known = true;
+                this.worse.add(n);
+                n.better.add(this);
+            }
 
-            addLower(n) {
-                this.known = true;
-                n.known = true;
-                this.lower.add(n);
-                n.higher.add(this);
-            }
-        }
+            addbetter(n) {
+                this.known = true;
+                n.known = true;
+                this.better.add(n);
+                n.worse.add(this);
+            }
+        }
 
-        class SortList {
-            nodes = new Map();
+        class SortList {
+            nodes = new Map();
 
-            constructor() {
-            }
+            constructor() {
+            }
 
-            update(i, a, b) {
-                let aNode = this.getNode(a);
-                let bNode = this.getNode(b);
-                if (Object.is(-0, i)) {
-                    aNode.unknown = bNode.unknown = true;
-                    return;
-                }
+            update(i, a, b) {
+                let aNode = this.getNode(a);
+                let bNode = this.getNode(b);
+                if (Object.is(-0, i)) {
+                    aNode.unknown = bNode.unknown = true;
+                    return;
+                }
 
-                if (i === 0) {
-                    aNode.addSame(bNode);
-                    return;
-                }
+                if (i === 0) {
+                    aNode.addSame(bNode);
+                    return;
+                }
 
-                if (i === -1) {
-                    aNode.unknown = true;
-                    return;
-                }
+                if (i === -1) {
+                    aNode.unknown = true;
+                    return;
+                }
 
-                if (i === -2) {
-                    bNode.unknown = true;
-                    return;
-                }
+                if (i === -2) {
+                    bNode.unknown = true;
+                    return;
+                }
 
-                let result = i * 2 - 3;
-                let visited = new Set();
-                let stack = [bNode];
-                do {
-                    let curr = stack.pop();
-                    let pre = visited.size;
-                    visited.add(curr);
-                    let post = visited.size;
-                    if (post > pre) {
-                        if (result > 0) {
-                            aNode.addLower(curr);
-                            for (let n in curr.lower) {
-                                stack.push(n);
-                            }
-                        } else {
-                            aNode.addHigher(curr);
-                            for (let n in curr.higher) {
-                                stack.push(n);
-                            }
-                        }
-                    }
-                } while (stack.length > 0)
-            }
+                let result = i * 2 - 3;
+                let visited = new Set();
+                let stack = [bNode];
+                do {
+                    let curr = stack.pop();
+                    let pre = visited.size;
+                    visited.add(curr);
+                    let post = visited.size;
+                    if (post > pre) {
+                        if (result > 0) {
+                            aNode.addbetter(curr);
+                            curr.better.forEach(n => {
+                                stack.push(n);
+                            });
+                        } else {
+                            aNode.addworse(curr);
+                            curr.worse.forEach(n => {
+                                stack.push(n);
+                            });
+                        }
+                    }
+                } while (stack.length > 0)
+                input.log();
+            }
 
-            getNode(title) {
-                let n = this.nodes.get(title);
-                if (!n) {
-                    this.nodes.set(title, n = new SortNode());
-                }
-                return n;
-            }
+            getNode(title) {
+                let n = this.nodes.get(title);
+                if (!n) {
+                    this.nodes.set(title, n = new SortNode(title));
+                }
+                return n;
+            }
 
-            resetNode(title) {
-                this.nodes.set(title, new SortNode());
-            }
+            resetNode(title) {
+                this.nodes.set(title, new SortNode(title));
+            }
 
-            compare(a, b) {
-                let aNode = this.getNode(a);
-                let bNode = this.getNode(b);
-                if (aNode.unknown || bNode.unknown || aNode.same.has(bNode)) {
-                    ++skips;
-                    return 0;
-                }
+            compare(a, b) {
+                let aNode = this.getNode(a);
+                let bNode = this.getNode(b);
+                if (aNode.unknown || bNode.unknown || aNode.same.has(bNode)) {
+                    ++skips;
+                    return 0;
+                }
 
-                if (aNode.higher.has(bNode)) {
-                    return -1;
-                }
+                if (aNode.worse.has(bNode)) {
+                    return -1;
+                }
 
-                if (aNode.lower.has(bNode)) {
-                    return 1;
-                }
+                if (aNode.better.has(bNode)) {
+                    return 1;
+                }
 
-                if (!pair) {
-                    pair = [a, b];
-                }
-                return 0;
-            }
-        }
+                if (!pair) {
+                    pair = [a, b];
+                }
+                return 0;
+            }
 
-        let titles = [
-            'A New Hope',
+            log() {
+                this.nodes.forEach(n => {
+                    let ss = [];
+                    n.worse.forEach(h => ss.push(`better than ${h.title}`));
+                    n.better.forEach(h => ss.push(`worse than ${h.title}`));
+                    ss.forEach(s => console.log(`= ${n.title} is ${s}`));
+                });
+            }
+        }
+
+        
+        let titles = [
+            'A New Hope',
             'The Phantom Menace',
             'The Force Awakens',
             'The Fellowship of the Ring'
-        ];
+        ];
 
-        let input = new SortList();
+        let allTitles = [
+            'A Thousand Sons',
+            'Age of Darkness',
+            'Angel Exterminatus',
+            'Angels of Caliban',
+            'Battle for the Abyss',
+            'Betrayer',
+            'Born of Flame',
+            'Corax',
+            'Deathfire',
+            'Deliverance Lost',
+            'Descent of Angels',
+            'Eye of Terra',
+            'Fallen Angels',
+            'False Gods',
+            'Fear to Tread',
+            'Fulgrim',
+            'Galaxy in Flames',
+            'Garro',
+            'Heralds of the Siege',
+            'Horus Rising',
+            'Know No Fear',
+            'Legacies of Betrayal',
+            'Legion',
+            'Mark of Calth',
+            'Mechanicum',
+            'Nemesis',
+            'Old Earth',
+            'Pharos',
+            'Praetorian of Dorn',
+            'Prospero Burns',
+            'Ruinstorm',
+            'Saturnine',
+            'Scars',
+            'Shadows of Treachery',
+            'Shattered Legions',
+            'Slaves to Darkness',
+            'Tales of Heresy',
+            'Tallarn',
+            'The Burden of Loyalty',
+            'The Buried Dagger',
+            'The Crimson King',
+            'The Damnation of Pythos',
+            'The First Heretic',
+            'The Flight of the Eisenstein',
+            'The Lost and the Damned',
+            'The Master of Mankind',
+            'The Outcast Dead',
+            'The Path of Heaven',
+            'The Primarchs',
+            'The Silent War',
+            'The Solar War',
+            'The Unremembered Empire',
+            'Titandeath',
+            'Vengeful Spirit',
+            'Vulkan Lives',
+            'War Without End',
+            'Wolfsbane'
+        ];
 
-        let show = () => {
-            console.log(titles
-                .map(title => {
-                    let n = input.nodes.get(title);
-                    return !n || !n.known
-                        ? null
-                        : title;
-                })
-                .filter(title => title));
-        }
+        let input = new SortList();
 
-        let better = i => {
-            if (i && pair && pair.length === 2) {
-                input.update(i, pair[0], pair[1]);
-            }
+        let show = () => {
+            console.log(titles
+                .map(title => {
+                    let n = input.nodes.get(title);
+                    return !n || !n.known
+                        ? null
+                        : title;
+                })
+                .filter(title => title));
+        }
 
-            comparisons = 0;
-            skips = 0;
-            pair = null;
-            titles.sort((a, b) => input.compare(a, b));
+        let better = i => {
+            if (i && pair && pair.length === 2) {
+                input.update(i, pair[0], pair[1]);
+            }
 
-            let sorted = titles
-                .map(title => {
-                    let n = input.nodes.get(title);
-                    return !n || !n.known
-                        ? null
-                        : title;
-                })
-                .filter(title => title);
-            if (pair) {
-                console.log(`which is better [1] ${pair[0]} or [2] ${pair[1]}? (type "better(0)" for neither; negative values for unknowns)`);
-                document.getElementById("t1").textContent = "[1] " + pair[0];
-                document.getElementById("t2").textContent = "[2] " + pair[1];
-                document.getElementById("u1").textContent = "[3] I haven't read " + pair[0];
-                document.getElementById("u2").textContent = "[4] I haven't read " + pair[1];
-                document.getElementById("u").textContent = "[5] I haven't read either";
-                document.getElementById("output").textContent = "click a button";
-                document.getElementById("temp").textContent = "\t" + titles.join("\n\t");
-            } else {
-                show();
-                console.log('finished sorting');
-                document.getElementById("t1").textContent = "";
-                document.getElementById("t2").textContent = "";
-                document.getElementById("u1").textContent = "";
-                document.getElementById("u2").textContent = "";
-                document.getElementById("u").textContent = "";
-                document.getElementById("output").textContent = "finished sorting:\n\t" + titles.join("\n\t");
-                document.getElementById("temp").textContent = "";
-            }
-        };
+            comparisons = 0;
+            skips = 0;
+            pair = null;
+            titles.sort((a, b) => input.compare(a, b));
 
-        let reset = title => {
-            input.resetNode(title);
-        }
+            let sorted = titles
+                .map(title => {
+                    let n = input.nodes.get(title);
+                    return !n || !n.known
+                        ? null
+                        : title;
+                })
+                .filter(title => title);
+            if (pair) {
+                console.log(`which is better [1] ${pair[0]} or [2] ${pair[1]}? (type "better(0)" for neither; negative values for unknowns)`);
+                document.getElementById("t1").textContent = "[1] " + pair[0];
+                document.getElementById("t2").textContent = "[2] " + pair[1];
+                document.getElementById("u1").textContent = "[3] I haven't read " + pair[0];
+                document.getElementById("u2").textContent = "[4] I haven't read " + pair[1];
+                document.getElementById("u").textContent = "[5] I haven't read either";
+                document.getElementById("output").textContent = "click a button";
+                document.getElementById("temp").textContent = "\t" + titles.join("\n\t");
+            } else {
+                show();
+                console.log('finished sorting');
+                document.getElementById("t1").textContent = "";
+                document.getElementById("t2").textContent = "";
+                document.getElementById("u1").textContent = "";
+                document.getElementById("u2").textContent = "";
+                document.getElementById("u").textContent = "";
+                document.getElementById("output").textContent = "finished sorting:\n\t" + titles.join("\n\t");
+                document.getElementById("temp").textContent = "";
+            }
+        };
 
-        better();
+        let reset = title => {
+            input.resetNode(title);
+        }
 
-        document.addEventListener('keyup', (e) => {
-            switch (e.key) {
-                case '1': better(1); break;
-                case '2': better(2); break;
-                case '3': better(-1); break;
-                case '4': better(-2); break;
-                case '5': better(-0); break;
-            }
-        });
+        better();
 
-    </script>
+        document.addEventListener('keyup', (e) => {
+            switch (e.key) {
+                case '1': better(1); break;
+                case '2': better(2); break;
+                case '3': better(-1); break;
+                case '4': better(-2); break;
+                case '5': better(-0); break;
+            }
+        });
+
+    </script>
 <html>
